@@ -1,0 +1,13 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="crown_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#B8860B" />
+    </linearGradient>
+  </defs>
+  <path d="M40 200H216V140L180 170L128 60L76 170L40 140V200Z" fill="url(#crown_gold)" />
+  <circle cx="128" cy="60" r="8" fill="#FFD700" />
+  <circle cx="40" cy="140" r="8" fill="#FFD700" />
+  <circle cx="216" cy="140" r="8" fill="#FFD700" />
+  <rect x="110" y="180" width="36" height="10" rx="5" fill="#FF0000" />
+</svg>

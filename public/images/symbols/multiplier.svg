@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="multiplier_grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#EE82EE" />
+      <stop offset="80%" stop-color="#9400D3" />
+      <stop offset="100%" stop-color="#4B0082" />
+    </radialGradient>
+    <filter id="orb_glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="128" cy="128" r="80" fill="url(#multiplier_grad)" filter="url(#orb_glow)" />
+  <circle cx="100" cy="100" r="15" fill="white" fill-opacity="0.4" />
+</svg>

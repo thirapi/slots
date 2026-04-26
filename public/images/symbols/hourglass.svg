@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wood_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B4513" />
+      <stop offset="100%" stop-color="#A0522D" />
+    </linearGradient>
+    <linearGradient id="sand_grad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#F4A460" />
+      <stop offset="50%" stop-color="#F4A460" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#F4A460" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <rect x="60" y="40" width="136" height="10" fill="url(#wood_grad)" />
+  <rect x="60" y="206" width="136" height="10" fill="url(#wood_grad)" />
+  <path d="M80 50L176 50L128 128L80 50Z" fill="#ADD8E6" fill-opacity="0.3" stroke="#ADD8E6" />
+  <path d="M80 206L176 206L128 128L80 206Z" fill="#ADD8E6" fill-opacity="0.3" stroke="#ADD8E6" />
+  <path d="M120 180L136 180L128 206L120 180Z" fill="url(#sand_grad)" />
+</svg>

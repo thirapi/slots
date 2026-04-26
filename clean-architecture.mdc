@@ -1,0 +1,69 @@
+--- 
+description: This Rule is helpfull to knowing the project structure flow reggardign Clean Architecture
+alwaysApply: false
+---
+
+Project ini menggunakan pendekatan Clean Architecture dengan direktori dasar yang disederhanakan dan dipusatkan pada `lib/` (tanpa namespace rumit) tapi tetap mentaati pemisahan layer secara ketat.
+
+### Entities
+Berisi definisi type atau class object (models, constants).
+Hanya menyimpan struktur data pure tanpa logika bisnis.
+Contoh: `lib/entities/category.model.ts`, `lib/entities/user.model.ts`, `lib/entities/game.model.js`.
+
+### Repository
+Bertanggung jawab untuk interaksi dengan database.
+Implementasi dari abstraksi repository.
+Tidak boleh memiliki logika bisnis.
+Contoh: `lib/repositories/user.repository.ts`.
+
+### Service
+Digunakan untuk proses-proses terpisah yang bukan bagian dari core business logic, atau berinteraksi dengan API eksternal/Modul khusus (e.g., enkripsi password, mengirim email, RNG matematika game).
+Service hanya dipanggil dari Use Case, bukan dari Controller atau Action. 
+Contoh: `lib/services/authentication/authentication.service.ts`, `lib/services/game/rng.service.js`.
+
+### Use Case
+Layer ini mengatur *business logic* dan application logic secara murni.
+Berinteraksi dengan Repository dan Service via Dependency Injection.
+Tidak boleh:
+- Memanggil Use Case lain.
+- Bergantung pada implementasi konkret repository/service secara harfiah (tergantung kontrak/interface).
+Wajib menggunakan paradigma Object Oriented (Class-based). 
+Contoh: `lib/use-cases/game/spin-game.use-case.js`.
+
+### Controller
+Bertanggung jawab untuk:
+- Validasi input menggunakan schema (misalnya Zod/Yup).
+- Menginstansiasi dan Memanggil Use Case yang relevan (Dependency Injection dilakukan disini, via constructor Use Case).
+- Menangani error handling dan konversi response.
+**Aturan ketat**: Khusus untuk controller WAJIB menggunakan fungsi biasa, BUKAN class based. Tidak boleh memanggil repository atau service secara langsung di luaran Use Case.
+Contoh: `lib/controllers/auth/sign-in.controller.ts`, `lib/controllers/game/spin.controller.js`.
+
+### Action
+Merupakan server action (Next.js App Router). Letaknya di dalam direktori Next.js App (`app/actions/` atau `app/`).
+Bekerja sebagai Entrypoint dari permintaan frontend.
+Bertugas meneruskan request payload ke Controller.
+Tidak boleh mengandung logika bisnis atau validasi sama sekali.
+Contoh: `app/actions/auth.action.ts`, `app/actions/game.action.js`.
+
+---
+
+## 🔒 Aturan Strict:
+
+- Semua komunikasi frontend ➝ backend harus mengalir melalui `Action ➝ Controller ➝ Use Case`.
+- Use Case tidak boleh memanggil Use Case lain.
+- Tidak ada logic bisnis di Controller, Action, atau Repository.
+- Semua layer wajib berbasis Class, KECUALI Controller (wajib Function) dan Action (wajib Function export default/Server).
+- Semua Dependency Injection dilakukan via constructor. Pemanggilan/Instansiasi ini dilakukan pada level Controller.
+- Apabila service dan repository memiliki kemungkinan mendaptkan beberapa implementasi teknologi berbeda, buatkan *interface* nya terlebih dahulu.
+- Use case dan controller bersifat spesifik/atom, sedangkan action bersifat grup. Contohnya `app/actions/auth.action.ts` dapat menjadi wadah export untuk semua sign-in, sign-up, logout Controller.
+
+## 🔄 Flow Implementasi Fitur Baru:
+
+Sebagai contoh mengembangkan fitur/endpoints mendapatkan Data Product:
+1. Cek Entities (`lib/entities/product.model.ts`). Apabila belum ada strukturnya, buat.
+2. Cek Repository (`lib/repositories/product.repository.ts`) untuk query yang sesuai. Apabila belum ada, sediakan method yang cocok tanpa business logic.
+3. Cek Service (`lib/services/...`) jika butuh hal yang melibat 3rd-party/modul hardware-based.
+4. Buat file Use Case secara spesifik (`lib/use-cases/product-management/get-all-products.use-case.ts`), set instansiasi depedency via *constructor*.
+5. Buat file Controller spesifik (`lib/controllers/product-management/get-all-products.controller.ts`), gunakan validasi (e.g. Zod), intansiasi use-case beserta inject dependensinya, jalankan method `.execute()` use case di dalamnya.
+6. Tambahkan fungsi Server di file Action (`app/actions/product.action.ts`) yang langsung melakukan pemanggilan Controller.
+7. Panggil Action tersebut dari React / UI Route.
