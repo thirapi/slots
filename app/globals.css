@@ -34,8 +34,13 @@ body {
 }
 
 @keyframes fall {
-  0% { opacity: 0; transform: translateY(-50px); }
+  0% { opacity: 0; transform: translateY(-700%); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fall-out {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(700%); opacity: 0; }
 }
 
 .tumble-out {
@@ -48,7 +53,11 @@ body {
 }
 
 .symbol-drop {
-  animation: fall 0.4s ease-out;
+  animation: fall 0.4s ease-out both;
+}
+
+.symbol-fall-out {
+  animation: fall-out 0.4s ease-in both;
 }
 
 .win-text-pop {

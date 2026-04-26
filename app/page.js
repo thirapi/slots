@@ -8,9 +8,9 @@ const COLS = 6;
 const ROWS = 5;
 
 const EVENT_DURATIONS = {
-  SPIN_START: 0,
+  SPIN_START: 1000,
   BALANCE_DEDUCTED: 0,
-  GRID_GENERATED: 500,
+  GRID_GENERATED: 1000,
   WIN_EVALUATED: 700,
   MULTIPLIERS_COLLECTED: 900,
   WIN_CLEANUP_STARTED: 100,
@@ -68,6 +68,10 @@ export default function SlotGameUI() {
   const [showAutoSpinMenu, setShowAutoSpinMenu] = useState(false);
   const [autoSpinsLeft, setAutoSpinsLeft] = useState(0);
   const [turboMode, setTurboMode] = useState(false);
+
+  const [showBetMenu, setShowBetMenu] = useState(false);
+  const [tempBetInput, setTempBetInput] = useState("");
+  const [isEvacuating, setIsEvacuating] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -179,23 +183,23 @@ export default function SlotGameUI() {
       const now = ctx.currentTime;
 
       if (type === 'spin') {
-        // Putaran (Mendengung menyapu)
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.3);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
-      } else if (type === 'drop') {
-        // Celah Jatuh (Bedebuk pelan)
+        // Klik mekanik super tajam (Switch / Tombol Mouse)
         osc.type = 'square';
-        osc.frequency.setValueAtTime(100, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.1);
-        gainNode.gain.setValueAtTime(0.05, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.02);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.02);
         osc.start(now);
-        osc.stop(now + 0.15);
+        osc.stop(now + 0.03);
+      } else if (type === 'drop') {
+        // Celah Jatuh tajam merespon kayu (Duk!)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(250, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.05);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.1);
       } else if (type === 'win') {
         // Nada Menang (Lonceng Minor/Mayor)
         osc.disconnect(); // matikan osc utama, kita pakai arpeggio
@@ -254,9 +258,14 @@ export default function SlotGameUI() {
           break;
         case "SPIN_START":
           playSound('spin');
+          setIsEvacuating(true); // Memerintahkan grid lama evakuasi (jatuh ke bawah)
           break;
         case "GRID_GENERATED":
-          playSound('drop');
+          setIsEvacuating(false); // Mode baru masuk (jatuh dari atas)
+          // Sinkronisasi mutlak Audio Duk! pada millidetik menyentuh dasar lantai (100ms stagger + 350ms duration)
+          for (let i = 0; i < 6; i++) {
+             setTimeout(() => playSound('drop'), (i * 100) + 350);
+          }
           setGrid(event.payload.grid);
           break;
         case "WIN_EVALUATED":
@@ -274,6 +283,9 @@ export default function SlotGameUI() {
           setPoppingMultipliers([]);
           break;
         case "CASCADE_APPLIED":
+          // Sinkronisasi jatuhnya simbol penambal (stagger 2 gelombang kecil)
+          setTimeout(() => playSound('drop'), 200);
+          setTimeout(() => playSound('drop'), 300);
           setGrid(event.payload.grid);
           break;
         case "CASCADE_ENDED":
@@ -364,8 +376,8 @@ export default function SlotGameUI() {
             tanpa mengorbankan tinggi dan lebar frame border
           */}
         <div className="flex-1 max-w-[1000px] h-[70vh] min-h-[450px] flex justify-center items-center relative p-2 sm:p-4 shrink-0">
-          {/* THE ACTUAL MATRIX FRAME - Flush Background & Border */}
-          <div className="relative w-full h-full bg-[#310b47] border-[6px] rounded-xl border-[#e8b548] z-10 flex">
+          {/* THE ACTUAL MATRIX FRAME - Flush Background & Border with overflow hidden */}
+          <div className="relative w-full h-full bg-[#310b47] border-[6px] rounded-xl border-[#e8b548] z-10 flex overflow-hidden">
             {grid[0]?.map((_, colIndex) => (
               <div
                 key={`col-${colIndex}`}
@@ -388,12 +400,12 @@ export default function SlotGameUI() {
                     >
                       <div
                         className={`relative w-full h-full flex items-center justify-center transition-all duration-300 rounded-lg
-                                   ${symbol ? "symbol-drop" : ""} 
+                                   ${isEvacuating ? "symbol-fall-out" : symbol ? "symbol-drop" : ""} 
                                    ${symbol?.isSuper ? "shadow-[0_0_15px_#ffea00] block" : ""}
                                    ${isWinning ? "bg-yellow-500/20 shadow-[0_0_15px_#ffea00] z-20 brightness-125" : ""}
                                    ${isPoppingMulti ? "scale-105 shadow-[0_0_20px_#ff0000] z-30 brightness-125" : ""}
                                  `}
-                        style={{ animationDelay: `${colIndex * 60}ms` }}
+                        style={{ animationDelay: `${colIndex * 100}ms` }}
                       >
                         {symbol?.image ? (
                           <>
@@ -456,7 +468,18 @@ export default function SlotGameUI() {
               <span className="text-yellow-500 font-extrabold w-16 xl:w-20 text-left">
                 Bet
               </span>
-              <span className="text-white font-bold text-sm xl:text-lg">Rp {bet.toLocaleString('id-ID')}</span>
+              <button
+                onClick={() => {
+                   if (!isSpinning && autoSpinsLeft === 0) {
+                      setTempBetInput(bet.toString());
+                      setShowBetMenu(true);
+                   }
+                }}
+                disabled={isSpinning || autoSpinsLeft > 0}
+                className="text-white font-bold text-sm xl:text-lg hover:text-yellow-300 underline decoration-dotted underline-offset-4 cursor-pointer disabled:opacity-50 disabled:no-underline"
+              >
+                Rp {bet.toLocaleString("id-ID")}
+              </button>
             </div>
           </div>
         </div>
@@ -578,6 +601,72 @@ export default function SlotGameUI() {
           </div>
         </div>
       )}
+
+      {/* BET MODAL MENU */}
+      {showBetMenu && (
+        <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1a1a24] border-2 border-[#b8860b] rounded-2xl w-full max-w-xs flex flex-col p-6 shadow-[0_10px_50px_rgba(30,10,40,0.8)] animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-black text-center text-yellow-500 mb-2 drop-shadow-md border-b border-white/10 pb-4">
+              Ubah Bet
+            </h3>
+
+            <div className="flex flex-col gap-4 py-4">
+               <div className="flex flex-col gap-1">
+                  <label className="text-xs text-[#a1a1aa] font-bold">Total Taruhan (Rp)</label>
+                  <input 
+                     type="number"
+                     min="200"
+                     max="1500000"
+                     step="200"
+                     value={tempBetInput}
+                     onChange={(e) => setTempBetInput(e.target.value)}
+                     className="w-full bg-[#111] border-2 border-[#b8860b]/50 rounded-lg p-3 text-white text-xl font-black focus:outline-none focus:border-yellow-500 transition-colors shadow-inner"
+                     placeholder="Contoh: 1000"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#71717a] font-bold mt-1">
+                     <span>Min: 200</span>
+                     <span>Max: 1.500.000</span>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-4 gap-2 mt-2">
+                  {[1000, 5000, 10000, 50000].map(quick => (
+                     <button 
+                        key={quick} 
+                        onClick={() => setTempBetInput(quick.toString())} 
+                        className="bg-[#2a2a35] hover:bg-[#d4af37] hover:text-black border border-white/10 rounded font-black text-xs py-2 transition-colors text-white"
+                     >
+                        {(quick/1000)}K
+                     </button>
+                  ))}
+               </div>
+            </div>
+
+            <div className="flex gap-3 mt-2">
+                <button
+                  onClick={() => setShowBetMenu(false)}
+                  className="flex-1 text-xs text-gray-400 hover:text-white font-black transition-all tracking-wider py-3 border border-gray-600 rounded-lg"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                     let num = parseInt(tempBetInput, 10);
+                     if(isNaN(num) || num < 200) num = 200;
+                     if(num > 1500000) num = 1500000;
+                     
+                     setBet(num);
+                     setShowBetMenu(false);
+                  }}
+                  className="flex-1 text-xs bg-gradient-to-b from-[#22c55e] to-[#166534] text-white font-black transition-all tracking-wider py-3 shadow-[0_4px_10px_rgba(22,101,52,0.5)] rounded-lg border border-[#86efac]"
+                >
+                  Setuju
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
